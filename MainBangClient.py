@@ -13,9 +13,10 @@ class Openning:
     def quit(self):
         self.root.destroy()
 
+
     def __init__(self):
         self.root = Tk()  # window
-        self.root.title('20074411郭尚仪')
+        self.root.title('20074411郭尚仪客户端')
         self.root.geometry("200x200")
         self.root.resizable()
 

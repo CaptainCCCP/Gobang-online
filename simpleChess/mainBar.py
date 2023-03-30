@@ -1,21 +1,17 @@
 from tkinter import *
-
-import online
-
+import os, threading, socket
 
 # 进入游戏后的主页面
 class Openning:
     def pressOnline(self):
         print("在线对战")
-        online.onlinewindow()
-        self.root.destroy()
 
     def quit(self):
         self.root.destroy()
 
     def __init__(self):
         self.root = Tk()  # window
-        self.root.title('20074411郭尚仪')
+        self.root.title('20074411郭尚仪最简五子棋')
         self.root.geometry("200x200")
         self.root.resizable()
 
