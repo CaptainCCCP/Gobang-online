@@ -1,7 +1,6 @@
 from tkinter import *
 import os, threading, socket
 import onlineBar
-
 # 进入游戏后的主页面
 class Openning:
     def pressOnline(self):
@@ -14,7 +13,7 @@ class Openning:
 
     def __init__(self):
         self.root = Tk()  # window
-        self.root.title('20074411郭尚仪最简五子棋')
+        self.root.title('20074411郭尚仪最简五子棋client')
         self.root.geometry("200x200")
         self.root.resizable()
 

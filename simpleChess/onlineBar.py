@@ -3,6 +3,68 @@ import tkinter
 from tkinter import *
 import tkinter.messagebox
 import numpy as np
+import threading
+from threading import Thread
+def callbackone():
+    global signals, clientSocketObj, startyet
+    while signals==1:
+        data = clientSocketObj.recv(1024)
+        data = data.decode()
+        print(f"白方说：{data}")
+        if "," in data:
+            i, j = data.split(",")
+            i = int(i)
+            j = int(j)
+            w1.create_oval(40 * i + 5, 40 * j + 5, 40 * i + 35, 40 * j + 35, fill='white', tags='last')
+            A[i][j] = 1
+            t = "w"
+            B[i][j] = t
+            startyet = 0
+            winlose(i, j, pvproot, B)
+            pvproot.update()
+        else:
+            print('quit?')
+            quit()
+
+def callbacktwo():
+    global signals, client, startyet
+    while signals == 0:
+        data = client.recv(1024)
+        data = data.decode()
+        print(f"黑方说：{data}")
+        if "," in data:
+            i, j = data.split(",")
+            i = int(i)
+            j = int(j)
+            w1.create_oval(40 * i + 5, 40 * j + 5, 40 * i + 35, 40 * j + 35, fill='black', tags='last')
+            A[i][j] = 1
+            t = "b"
+            B[i][j] = t
+            startyet = 0
+            winlose(i, j, pvproot, B)
+            pvproot.update()
+        else:
+            print('quit?client')
+            quit()
+
+
+# def hui(self):
+#     if len(self.order) == 0:
+#         return
+#
+#     self.board.canvas.delete("last")
+#     z = self.order.pop()
+#     x = z % 15
+#     y = z // 15
+#     self.db[y][x] = 2  # 标记为空
+#     self.color_count = 1
+#     for i in self.order:
+#         ix = i % 15
+#         iy = i // 15
+#         self.change_color()
+#         self.board.canvas.create_oval(40 * i + 5, 40 * j + 5, 40 * i + 35, 40 * j + 35, fill=self.color, tags='last')
+#     self.change_color()
+#     self.game_print.set("请" + self.color + "落子")
 
 
 def createGame():
@@ -79,10 +141,9 @@ def winlose(i, j, pvproot, B):
 
 
 def callback1(event):
-    global num, down, i, j, sent
-    # down用于区分状态   i, j为鼠标位置   num为棋子序号   sent为发送的信息
-    # down0位有棋子  1为
-    if down == 0:
+    global num, signals, i, j, sent,clientSocketObj
+    # signals用于区分状态0b 1w -1none   i, j为鼠标位置   num为棋子序号   sent为发送的信息
+    if signals != 0:
         return
     else:
         for j in range(0, 15):
@@ -91,51 +152,43 @@ def callback1(event):
                     break
             if (event.x - 20 - 40 * i) ** 2 + (event.y - 20 - 40 * j) ** 2 <= 2 * 20 ** 2:
                 break
-        if A[i][j] != 1:
-            down = 0
-            w1.create_oval(40 * i + 5, 40 * j + 5, 40 * i + 35, 40 * j + 35, fill='black')
+        print('按了')
+        signals = 1
+        if A[i][j] != 1:  # 如果这个位置没棋子
+            w1.create_oval(40 * i + 5, 40 * j + 5, 40 * i + 35, 40 * j + 35, fill='black', tags='last')
+            order.append((i, j, 0))
+
 
             A[i][j] = 1
             t = "b"
             B[i][j] = t
-
             send_data = str(i) + "," + str(j)
             clientSocketObj.send(send_data.encode())
 
             winlose(i, j, pvproot, B)
             sent.set("现在轮到白方落子")
+
             pvproot.update()
-            data = clientSocketObj.recv(1024)
-            down = 1
-            data = data.decode()
-            if "," in data:
-                i, j = data.split(",")
-                i = int(i)
-                j = int(j)
-                w1.create_oval(40 * i + 5, 40 * j + 5, 40 * i + 35, 40 * j + 35, fill='white')
-                A[i][j] = 1
-                t = "w"
-                B[i][j] = t
-                winlose(i, j, pvproot, B)
-                down = 1
-            else:
-                quit()
 
 
 def callback2(event):
-    global  down, i, j, sent
-    if down == 0:
+    global signals, i, j, sent, client, startyet
+    if signals != 1:
         return
-    elif down == 1:
+    else:
         for j in range(0, 15):
             for i in range(0, 15):
                 if (event.x - 20 - 40 * i) ** 2 + (event.y - 20 - 40 * j) ** 2 <= 2 * 20 ** 2:
                     break
             if (event.x - 20 - 40 * i) ** 2 + (event.y - 20 - 40 * j) ** 2 <= 2 * 20 ** 2:
                 break
+        print('按了')
+        signals = 0
         if A[i][j] != 1:
-            down = 0
-            w1.create_oval(40 * i + 5, 40 * j + 5, 40 * i + 35, 40 * j + 35, fill='white')
+            # signals = -1
+            w1.create_oval(40 * i + 5, 40 * j + 5, 40 * i + 35, 40 * j + 35, fill='white', tags='last')
+            order.append((i, j, 1))
+
             A[i][j] = 1
             t = "w"
             B[i][j] = t
@@ -143,42 +196,15 @@ def callback2(event):
             send_data = str(i) + "," + str(j)
             client.send(send_data.encode())
             sent.set("现在轮到黑方落子")
+
             pvproot.update()
 
-        data = client.recv(1024)
-        down = 1
-        data = data.decode()
-        if "," in data:
-            i, j = data.split(",")
-            i = int(i)
-            j = int(j)
-            w1.create_oval(40 * i + 5, 40 * j + 5, 40 * i + 35, 40 * j + 35, fill='black')
-            A[i][j] = 1
-            t = "b"
-            B[i][j] = t
-            winlose(i, j, pvproot, B)
-        else:
-            tkinter.messagebox.showinfo("提示", "对方已退出")
-            quit()
-    elif down == -1:
-        data = client.recv(1024)
-        down = 1
-        data = data.decode()
-        if "," in data:
-            i, j = data.split(",")
-            i = int(i)
-            j = int(j)
-            w1.create_oval(40 * i + 5, 40 * j + 5, 40 * i + 35, 40 * j + 35, fill='black')
-            A[i][j] = 1
-            t = "b" + str(num - 1)
-            B[i][j] = t
-            winlose(i, j, pvproot, B)
-        else:
-            tkinter.messagebox.showinfo("提示", "对方已退出")
-            quit()
-
+def start():
+    global startyet
+    startyet = 1
 
 def quit():
+    global clientSocketObj
     senddata = "quit"
     try:
         clientSocketObj.send(senddata.encode())
@@ -191,9 +217,12 @@ def quit():
 
 
 def createboard(info):
-    global down, pvproot, A, B, w1, sent
+    global startyet, signals, pvproot, A, B, w1, sent , order
     # sent用来发送信息并显示    pvproot为窗口    w1为canvas    info区分黑白
-    # down有0、-1、1   A为全0array    B为全null array
+    # A为全0array    B为全null array
+    startyet = 0
+    signals = 0  # 黑方先行
+    order = []
     sent = StringVar()
     sent.set("现在轮到黑方落子")
 
@@ -220,18 +249,31 @@ def createboard(info):
 # 一些提示
     if info == 1:
         tkinter.messagebox.showinfo("提示", "你是黑方，先下")
-        down = 1
         w1.bind("<Button -1>", callback1)
+
+        startbtn = Button(pvproot, text="开始游戏", width=10, height=1, command=start, font=('楷体', 15), bg="Floralwhite")
+        startbtn.pack()
         u = Button(pvproot, text="退出游戏", width=10, height=1, command=quit, font=('楷体', 15), bg="Floralwhite")
         u.pack(fill=X)
-        mainloop()
+
+        tb = Thread(target=callbackone())
+        tb.start()
+
+        pvproot.mainloop()
     else:
         tkinter.messagebox.showinfo("提示", "你是白方，请单击鼠标并等待黑方开局")
-        down = -1
         w1.bind("<Button -1>", callback2)
+
+        startbtn = Button(pvproot, text="开始游戏", width=10, height=1, command=start, font=('楷体', 15), bg="Floralwhite")
+        startbtn.pack()
         u = Button(pvproot, text="退出游戏", width=10, height=1, command=quit, font=('楷体', 15), bg="Floralwhite")
         u.pack(fill=X)
+
+        tw = Thread(target=callbacktwo())
+        tw.start()
+
         pvproot.mainloop()
+
 
 
 def onlinewindow():
@@ -257,5 +299,3 @@ def onlinewindow():
     joinButton.grid(row=3, column=0, columnspan=2)
 
     onlineroot.mainloop()
-
-# onlinewindow()
